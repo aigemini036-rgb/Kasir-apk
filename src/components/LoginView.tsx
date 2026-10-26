@@ -1,138 +1,146 @@
 import React, { useState } from 'react';
-import { Store, Lock, User as UserIcon, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Store, Lock, User as UserIcon, AlertCircle, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
 import { StoreSettings } from '../types';
 
 interface LoginViewProps {
   settings: StoreSettings;
   onLogin: (username: string, password: string) => boolean;
-  onQuickLogin: (username: string) => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   settings,
   onLogin,
-  onQuickLogin,
 }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    const success = onLogin(username, password);
-    if (!success) {
-      setErrorMsg('Username atau password salah! (Coba: admin / admin123 atau kasir / kasir123)');
-    }
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const success = onLogin(username, password);
+      setIsLoading(false);
+      if (!success) {
+        setErrorMsg('Username atau kata sandi tidak sesuai. Silakan periksa kembali kredensial Anda.');
+      }
+    }, 250);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
-        {/* Top Header */}
-        <div className="bg-slate-900 p-8 text-center text-white relative">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg mb-3">
-            <Store className="w-8 h-8" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col justify-center items-center p-4 sm:p-6 select-none relative overflow-hidden">
+      {/* Subtle modern ambient background glows */}
+      <div className="absolute top-1/4 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-md w-full relative z-10">
+        {/* Main Card */}
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-b from-slate-900 to-slate-950 p-6 sm:p-8 text-center text-white relative border-b border-slate-800">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xl shadow-indigo-500/25 mb-3 ring-4 ring-indigo-500/20">
+              <Store className="w-8 h-8" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">{settings.store_name}</h1>
+            <p className="text-xs text-slate-400 mt-1 font-medium">Sistem Kasir & Point of Sale (POS) Terpadu</p>
+            
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-3 rounded-full bg-slate-800/80 border border-slate-700/80 text-[11px] text-slate-300">
+              <Shield className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Sesi Terenkripsi & Aman</span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100">{settings.store_name}</h1>
-          <p className="text-xs text-slate-400 mt-1">Sistem Point of Sale (POS) & Manajemen Kasir</p>
-        </div>
 
-        {/* Form Body */}
-        <div className="p-8 space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Username Pengguna
-              </label>
-              <div className="relative">
-                <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin / kasir"
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Kata Sandi (Password)
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white"
-                />
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs flex items-center gap-2 border border-red-200">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
-            >
-              <span>Masuk ke Sistem POS</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Quick Demo Login Credentials */}
-          <div className="pt-4 border-t border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2 text-center">
-              Akses Cepat Akun Demo (1-Klik)
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setUsername('admin');
-                  setPassword('admin123');
-                  onQuickLogin('admin');
-                }}
-                className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 transition-all text-left group"
-              >
-                <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Admin</span>
+          {/* Form */}
+          <div className="p-6 sm:p-8 space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Username Pengguna
+                </label>
+                <div className="relative">
+                  <div className="w-10 h-10 absolute left-0 top-0 flex items-center justify-center pointer-events-none text-slate-400">
+                    <UserIcon className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Masukkan username Anda"
+                    className="w-full pl-10 pr-3.5 py-3 text-sm bg-slate-50 border border-slate-300/80 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all outline-hidden text-slate-800 font-medium placeholder:text-slate-400"
+                  />
                 </div>
-                <p className="text-[10px] text-slate-500 font-mono mt-0.5">admin / admin123</p>
-                <p className="text-[9px] text-amber-600 font-medium mt-0.5">Akses penuh semua fitur</p>
-              </button>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Kata Sandi (Password)
+                  </label>
+                </div>
+                <div className="relative">
+                  <div className="w-10 h-10 absolute left-0 top-0 flex items-center justify-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Masukkan kata sandi"
+                    className="w-full pl-10 pr-10 py-3 text-sm bg-slate-50 border border-slate-300/80 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all outline-hidden text-slate-800 font-medium placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="w-10 h-10 absolute right-0 top-0 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-50 text-rose-700 rounded-2xl text-xs flex items-center gap-2.5 border border-rose-200/80 animate-in fade-in duration-200">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span className="leading-snug">{errorMsg}</span>
+                </div>
+              )}
 
               <button
-                type="button"
-                onClick={() => {
-                  setUsername('kasir');
-                  setPassword('kasir123');
-                  onQuickLogin('kasir');
-                }}
-                className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 transition-all text-left group"
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
-                  <UserIcon className="w-3.5 h-3.5" />
-                  <span>Kasir (Operator)</span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-mono mt-0.5">kasir / kasir123</p>
-                <p className="text-[9px] text-emerald-600 font-medium mt-0.5">Hanya POS & nota sendiri</p>
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Masuk ke Sistem Kasir</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
+            </form>
+
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <p className="text-[11px] text-slate-400">
+                Hubungi administrator jika Anda lupa kata sandi akun kasir.
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Footer info */}
+        <p className="text-center text-xs text-slate-400/80 mt-6 font-medium">
+          &copy; {new Date().getFullYear()} {settings.store_name} &bull; POS Kasir Modern
+        </p>
       </div>
     </div>
   );

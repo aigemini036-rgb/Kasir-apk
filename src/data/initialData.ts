@@ -4,7 +4,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 1,
     username: 'admin',
-    name: 'Budi Santoso (Admin)',
+    name: 'Budi Santoso',
     role: 'admin',
     is_active: true,
     must_change_password: true,
@@ -13,7 +13,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 2,
     username: 'kasir',
-    name: 'Siti Rahma (Kasir 1)',
+    name: 'Siti Rahma',
     role: 'cashier',
     is_active: true,
     must_change_password: true,
@@ -22,7 +22,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 3,
     username: 'kasir2',
-    name: 'Ahmad Fauzi (Kasir 2)',
+    name: 'Ahmad Fauzi',
     role: 'cashier',
     is_active: true,
     must_change_password: false,
@@ -50,6 +50,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stock: 45,
     min_stock: 10,
     unit: 'botol',
+    image_url: '/src/assets/images/pos_kopi_susu_1792989829026.jpg',
     is_active: true,
   },
   {
@@ -63,6 +64,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stock: 60,
     min_stock: 15,
     unit: 'kotak',
+    image_url: '/src/assets/images/pos_teh_botol_1792989830087.jpg',
     is_active: true,
   },
   {
@@ -89,6 +91,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stock: 28,
     min_stock: 8,
     unit: 'bungkus',
+    image_url: '/src/assets/images/pos_snack_chips_1792989831032.jpg',
     is_active: true,
   },
   {
@@ -141,6 +144,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stock: 5, // Stok menipis
     min_stock: 10,
     unit: 'pouch',
+    image_url: '/src/assets/images/pos_minyak_goreng_1792989831657.jpg',
     is_active: true,
   },
   {
@@ -154,6 +158,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     stock: 4, // Stok menipis
     min_stock: 8,
     unit: 'karung',
+    image_url: '/src/assets/images/pos_beras_karung_1792989831209.jpg',
     is_active: true,
   },
   {

@@ -33,7 +33,6 @@ import { ReportsView } from './components/ReportsView';
 import { UserManagement } from './components/UserManagement';
 import { StoreSettingsView } from './components/StoreSettingsView';
 import { ActivityLogsView } from './components/ActivityLogsView';
-import { SqlAndSourceModal } from './components/SqlAndSourceModal';
 import { ThermalReceiptModal } from './components/ThermalReceiptModal';
 import { Forbidden403 } from './components/Forbidden403';
 import { LoginView } from './components/LoginView';
@@ -48,7 +47,7 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('pos_current_user');
-    return saved ? JSON.parse(saved) : INITIAL_USERS[0]; // Default login as Admin
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
@@ -162,32 +161,11 @@ export default function App() {
     return true;
   };
 
-  const handleQuickLogin = (username: string) => {
-    const found = users.find((u) => u.username === username);
-    if (found && found.is_active) {
-      setCurrentUser(found);
-      addLog('login', `User ${found.name} login via Akses Cepat`);
-      setActiveTab('pos');
-    }
-  };
-
   const handleLogout = () => {
     if (currentUser) {
       addLog('logout', `User ${currentUser.name} logout dari sistem`);
     }
     setCurrentUser(null);
-  };
-
-  const handleSwitchUser = (username: string) => {
-    const target = users.find((u) => u.username === username);
-    if (target && target.is_active) {
-      setCurrentUser(target);
-      addLog('login', `Beralih sesi login ke ${target.name} (${target.role})`);
-      // If switching to cashier from admin tab, send back to POS
-      if (target.role === 'cashier' && !['pos', 'transactions', 'source_code'].includes(activeTab)) {
-        setActiveTab('pos');
-      }
-    }
   };
 
   // Role Access Guard: Operator accessing admin tabs -> 403
@@ -455,13 +433,12 @@ export default function App() {
       <LoginView
         settings={settings}
         onLogin={handleLogin}
-        onQuickLogin={handleQuickLogin}
       />
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-800">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       {/* Top Navbar */}
       <Navbar
         currentUser={currentUser}
@@ -469,13 +446,11 @@ export default function App() {
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
         onLogout={handleLogout}
-        onSwitchUser={handleSwitchUser}
-        allUsers={users}
         onChangePasswordClick={() => setIsChangePasswordOpen(true)}
       />
 
-      {/* Main View Router */}
-      <main className="flex-1 flex flex-col overflow-y-auto">
+      {/* Main View Router - with pb-18 for mobile bottom bar */}
+      <main className="flex-1 flex flex-col overflow-y-auto pb-18 lg:pb-0">
         {activeTab === 'pos' && (
           <PosScreen
             products={products}
@@ -560,12 +535,10 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'source_code' && <SqlAndSourceModal />}
-
         {activeTab === 'forbidden' && (
           <Forbidden403
             onBackToPos={() => setActiveTab('pos')}
-            onSwitchToAdmin={() => handleSwitchUser('admin')}
+            onLogoutAndLoginAdmin={handleLogout}
           />
         )}
       </main>

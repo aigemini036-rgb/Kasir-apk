@@ -120,7 +120,7 @@ export const StoreSettingsView: React.FC<StoreSettingsViewProps> = ({
             </div>
           )}
 
-          <div className="pt-3 border-t border-slate-100 flex justify-end">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
             <button
               type="submit"
               className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all"

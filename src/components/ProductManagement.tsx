@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Product, Category } from '../types';
-import { formatRupiah } from '../utils/helpers';
+import { formatRupiah, processImageFileToDataUrl } from '../utils/helpers';
+import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { 
   Plus, 
   Search, 
@@ -12,7 +13,11 @@ import {
   X, 
   Check,
   Layers,
-  AlertTriangle
+  AlertTriangle,
+  Image as ImageIcon,
+  Camera,
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 
 interface ProductManagementProps {
@@ -51,13 +56,57 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
     stock: 0,
     min_stock: 5,
     unit: 'pcs',
+    image_url: '',
     is_active: true,
   });
+
+  // Device image upload & barcode scanner state
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Category Modal Form
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
+
+  // Process image from local device storage
+  const processImage = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setImageError('File yang dipilih harus berupa gambar (JPG, PNG, WebP).');
+      return;
+    }
+    setImageError(null);
+    setIsProcessingImage(true);
+    try {
+      const dataUrl = await processImageFileToDataUrl(file, 640, 640, 0.82);
+      setFormData((prev) => ({ ...prev, image_url: dataUrl }));
+    } catch (err: unknown) {
+      setImageError(err instanceof Error ? err.message : 'Gagal memproses gambar dari perangkat.');
+    } finally {
+      setIsProcessingImage(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processImage(file);
+    }
+  };
+
+  const handleDropImage = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processImage(file);
+    }
+  };
 
   // Filter products
   const filtered = useMemo(() => {
@@ -87,6 +136,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
       stock: 10,
       min_stock: 5,
       unit: 'pcs',
+      image_url: '',
       is_active: true,
     });
     setIsProductModalOpen(true);
@@ -104,6 +154,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
       stock: product.stock,
       min_stock: product.min_stock,
       unit: product.unit,
+      image_url: product.image_url || '',
       is_active: product.is_active,
     });
     setIsProductModalOpen(true);
@@ -251,8 +302,25 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
                       return (
                         <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-4 py-3">
-                            <p className="font-bold text-slate-800">{prod.name}</p>
-                            <span className="text-[10px] text-slate-400 font-mono">{prod.code}</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+                                <ImageIcon className="w-5 h-5 text-slate-300 absolute" />
+                                {prod.image_url && (
+                                  <img
+                                    src={prod.image_url}
+                                    alt={prod.name}
+                                    className="w-full h-full object-cover relative z-10"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-800">{prod.name}</p>
+                                <span className="text-[10px] text-slate-400 font-mono">{prod.code}</span>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 py-3 font-medium text-slate-700">
                             {cat?.name || 'Tanpa Kategori'}
@@ -402,16 +470,25 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
 
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Barcode (EAN-13)
+                    Barcode (EAN-13 / SKU)
                   </label>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     <input
                       type="text"
                       value={formData.barcode}
                       onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                      placeholder="899..."
+                      placeholder="Scan kamera atau ketik..."
                       className="w-full text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setIsBarcodeScannerOpen(true)}
+                      title="Scan Barcode Pakai Kamera HP / Laptop"
+                      className="px-2.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Kamera</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -421,7 +498,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
                         })
                       }
                       title="Generate Barcode Acak"
-                      className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700"
+                      className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 shrink-0 cursor-pointer transition-colors"
                     >
                       <Sparkles className="w-4 h-4" />
                     </button>
@@ -507,7 +584,95 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
                   />
                 </div>
 
-                <div className="flex items-center pt-5">
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Foto Produk (Dari Penyimpanan Perangkat)
+                    </label>
+                    <span className="text-[10px] text-slate-400">JPG, PNG, WebP (Galeri/Kamera)</span>
+                  </div>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                  />
+
+                  {formData.image_url ? (
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-xs">
+                        <img
+                          src={formData.image_url}
+                          alt="Preview Produk"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <Check className="w-3 h-3" /> Foto dari Perangkat
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">Tersimpan di database & perangkat Anda.</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => imageInputRef.current?.click()}
+                            disabled={isProcessingImage}
+                            className="text-xs px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg font-medium text-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                            Ganti Foto
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, image_url: '' }))}
+                            className="text-xs px-2.5 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg font-medium text-rose-700 flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Hapus
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={handleDropImage}
+                      className="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/80 hover:bg-indigo-50/30 rounded-2xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {isProcessingImage ? (
+                          <RefreshCw className="w-5 h-5 animate-spin text-indigo-600" />
+                        ) : (
+                          <Upload className="w-5 h-5" />
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        {isProcessingImage ? 'Mengoptimalkan foto...' : 'Pilih Foto dari Galeri / Kamera Perangkat'}
+                      </p>
+                      <p className="text-[11px] text-slate-400 max-w-xs">
+                        Ketuk untuk membuka galeri foto atau kamera perangkat. Foto otomatis tersimpan langsung tanpa URL.
+                      </p>
+                    </div>
+                  )}
+
+                  {imageError && (
+                    <p className="text-[11px] text-rose-600 mt-1.5 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {imageError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-span-2 flex items-center pt-2">
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
                     <input
                       type="checkbox"
@@ -599,6 +764,18 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({
           </div>
         </div>
       )}
+
+      {/* CAMERA BARCODE SCANNER MODAL FOR PRODUCT INPUT */}
+      <BarcodeScannerModal
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onScanSuccess={(code) => {
+          setFormData((prev) => ({ ...prev, barcode: code }));
+          setIsBarcodeScannerOpen(false);
+        }}
+        title="Scan Barcode Produk (Kamera HP / Laptop)"
+        subtitle="Arahkan kamera ke barcode kemasan produk untuk mengisi otomatis"
+      />
     </div>
   );
 };
